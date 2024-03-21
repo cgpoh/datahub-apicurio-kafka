@@ -1,0 +1,10 @@
+source:
+  type: "kafka"
+  config:
+    platform_instance: "local-docker"
+    schema_registry_class: "apicurio-kafka.apicurio_schema_registry.ApicurioSchemaRegistry"
+    connection:
+      bootstrap: "localhost:9093"
+      schema_registry_url: http://localhost:8085/apis/registry/v2
+#sink:
+#  type: "console"
