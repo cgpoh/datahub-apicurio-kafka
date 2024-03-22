@@ -26,13 +26,14 @@ logger = logging.getLogger(__name__)
 
 class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
     """
-    This is apicurio schema registry specific implementation of datahub.ingestion.source.kafka import SchemaRegistry
+    This is Apicurio schema registry specific implementation of datahub.ingestion.source.kafka import SchemaRegistry
     It knows how to get SchemaMetadata of a topic from ApicurioSchemaRegistry
     """
 
     def __init__(
         self, source_config: KafkaSourceConfig, report: KafkaSourceReport
     ) -> None:
+        self.loop = None
         self.source_config: KafkaSourceConfig = source_config
         self.report: KafkaSourceReport = report
 
@@ -89,25 +90,6 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
             cleaned_str = self._compact_schema(str(return_artifact, "utf-8"))
             # "value.id" or "value.[type=string]id"
             fields = schema_util.avro_schema_to_mce_fields(cleaned_str)
-        # elif artifact.type == "JSON":
-        #     self.report.report_warning(
-        #         topic,
-        #         f"Parsing schema type {artifact.type} is currently not implemented",
-        #     )
-        #     base_name = topic.replace(".", "_")
-        #     canonical_name = (
-        #         f"{base_name}-key" if is_key_schema else f"{base_name}-value"
-        #     )
-        #     jsonref_schema = self._load_json_schema_with_resolved_references(
-        #         schema=schema,
-        #         name=canonical_name,
-        #         subject=f"{topic}-key" if is_key_schema else f"{topic}-value",
-        #     )
-        #     fields = list(
-        #         JsonSchemaTranslator.get_fields_from_schema(
-        #             jsonref_schema, is_key_schema=is_key_schema
-        #         )
-        #     )
         elif not self.source_config.ignore_warnings_on_schema_type:
             self.report.report_warning(
                 topic,
