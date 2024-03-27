@@ -3,6 +3,8 @@ import json
 import logging
 
 import nest_asyncio
+from apicurioregistrysdk.client.search.artifacts.artifacts_request_builder import ArtifactsRequestBuilder
+
 nest_asyncio.apply()
 
 from hashlib import md5
@@ -46,8 +48,26 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
         self.registry_client = RegistryClient(request_adapter)
 
         try:
-            self.known_schema_registry_subjects: ArtifactSearchResults = await self.registry_client.search.artifacts.get()
+            limit = self.source_config.connection.schema_registry_config.get("pagination")
+            if limit == None:
+                logger.warning(f"Unable to get pagination key in recipe. Setting maximum number of artifacts to be returned to default 20")
+                limit = 20
+            else:
+                logger.info(f"Maximum number of artifacts to be returned: {limit}")
+
+            query_params = ArtifactsRequestBuilder.ArtifactsRequestBuilderPostQueryParameters(
+                limit=limit
+            )
+
+            request_configuration = (
+                ArtifactsRequestBuilder.ArtifactsRequestBuilderPostRequestConfiguration(
+                    query_parameters=query_params
+                )
+            )
+            self.known_schema_registry_subjects: ArtifactSearchResults = await self.registry_client.search.artifacts.get(request_configuration=request_configuration)
             logger.info(f"Known schema registry subjects: {self.known_schema_registry_subjects.count}")
+            for artifact in self.known_schema_registry_subjects.artifacts:
+                logger.info(f"known artifact id: {artifact.id}")
         except Exception as e:
             logger.warning(f"Failed to get artifacts from schema registry: {e}")
 
@@ -109,15 +129,15 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
         # Obtain the schema fields from schema for the topic.
         fields: List[SchemaField] = []
         if artifact is not None:
-            logger.debug(
+            logger.info(
                 f"The {schema_type_str} schema subject:'{artifact.id}', grp ID:'{artifact.group_id}' is found for topic:'{topic}'."
             )
             fields = await self._get_schema_fields(
                 topic=topic, artifact=artifact, is_key_schema=is_key_schema
             )
         else:
-            logger.debug(
-                f"For topic: {topic}, the schema registry subject for the schema is not found."
+            logger.info(
+                f"For topic: {topic}, the {schema_type_str} schema registry subject for the schema is not found."
             )
         return artifact, fields
 

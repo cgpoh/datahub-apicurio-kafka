@@ -91,6 +91,9 @@ async def test_apicurio_schema_registry():
 
     kafka_source_config = KafkaSourceConfig()
     kafka_source_config.connection.schema_registry_url = f"http://{os.environ[REGISTRY_HOST]}:{os.environ[REGISTRY_PORT]}/apis/registry/v2"
+    kafka_source_config.connection.schema_registry_config = {
+        "pagination": 100
+    }
 
     kafka_source_report = KafkaSourceReport()
 
