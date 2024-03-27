@@ -160,7 +160,7 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
 
             if key_artifact is not None:
                 key_schema = self.loop.run_until_complete(
-                    self._get_artifact(artifact)
+                    self._get_artifact(key_artifact)
                 )
 
             # create a merged string for the combined schemas and compute an md5 hash across
