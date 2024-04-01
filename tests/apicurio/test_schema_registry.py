@@ -89,10 +89,30 @@ async def test_apicurio_schema_registry():
     meta_data = await registry_client.groups.by_group_id("foo.group").artifacts.post(payload, request_configuration=request_configuration)
     assert meta_data.id == "test-value"
 
+    payload.content = """{
+        "type": "record",
+        "namespace": "test_1",
+        "name": "TestRecord_1",
+        "fields": [
+            {
+                "name": "nametest",
+                "type" : "string"
+            }
+        ]
+    }"""
+
+    request_configuration = (
+        ArtifactsRequestBuilder.ArtifactsRequestBuilderPostRequestConfiguration(
+            headers={"X-Registry-ArtifactId": "test-1-value"}, query_parameters=query_params
+        )
+    )
+    meta_data = await registry_client.groups.by_group_id("foo.group").artifacts.post(payload, request_configuration=request_configuration)
+    assert meta_data.id == "test-1-value"
+
     kafka_source_config = KafkaSourceConfig()
     kafka_source_config.connection.schema_registry_url = f"http://{os.environ[REGISTRY_HOST]}:{os.environ[REGISTRY_PORT]}/apis/registry/v2"
     kafka_source_config.connection.schema_registry_config = {
-        "pagination": 100
+        "pagination": 1
     }
 
     kafka_source_report = KafkaSourceReport()
@@ -100,4 +120,14 @@ async def test_apicurio_schema_registry():
     apicurio_schema_registry = ApicurioSchemaRegistry(kafka_source_config, kafka_source_report)
     apicurio_schema_registry = apicurio_schema_registry.create(kafka_source_config, kafka_source_report)
     schema_metadata = apicurio_schema_registry.get_schema_metadata("test", "")
+    assert schema_metadata is not None
+
+    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "")
+    assert schema_metadata is None
+
+    kafka_source_config.connection.schema_registry_config = {}
+
+    apicurio_schema_registry = ApicurioSchemaRegistry(kafka_source_config, kafka_source_report)
+    apicurio_schema_registry = apicurio_schema_registry.create(kafka_source_config, kafka_source_report)
+    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "")
     assert schema_metadata is not None
