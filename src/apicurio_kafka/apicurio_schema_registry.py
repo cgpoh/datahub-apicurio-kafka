@@ -39,6 +39,32 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
         self.source_config: KafkaSourceConfig = source_config
         self.report: KafkaSourceReport = report
 
+    async def _get_all_artifacts(self, offset=0, per_page=20) -> list[SearchedArtifact]:
+        # Seems like offset can't be 0
+        if offset == 0:
+            query_params = ArtifactsRequestBuilder.ArtifactsRequestBuilderPostQueryParameters(
+                limit=per_page
+            )
+        else:
+            query_params = ArtifactsRequestBuilder.ArtifactsRequestBuilderPostQueryParameters(
+                limit=per_page,
+                offset=offset,
+            )
+
+        request_configuration = (
+            ArtifactsRequestBuilder.ArtifactsRequestBuilderPostRequestConfiguration(
+                query_parameters=query_params
+            )
+        )
+        results: ArtifactSearchResults = await self.registry_client.search.artifacts.get(
+            request_configuration=request_configuration)
+
+        if len(results.artifacts) > 0:
+            offset += per_page
+            return results.artifacts + (await self._get_all_artifacts(offset, per_page))
+        else:
+            return results.artifacts
+
     async def _async_init(
         self
     ) -> None:
@@ -48,23 +74,32 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
         self.registry_client = RegistryClient(request_adapter)
 
         try:
+            artifact_search_results: ArtifactSearchResults = ArtifactSearchResults()
+
             limit = self.source_config.connection.schema_registry_config.get("pagination")
-            if limit == None:
-                logger.warning(f"Unable to get pagination key in recipe. Setting maximum number of artifacts to be returned to default 20")
+            if limit is None:
+                logger.warning(f"Unable to get pagination key in recipe. Getting all artifacts...")
                 limit = 20
+                searched_artifacts = await self._get_all_artifacts(per_page=limit)
+                artifact_search_results.artifacts = searched_artifacts
+                artifact_search_results.count = len(searched_artifacts)
             else:
                 logger.info(f"Maximum number of artifacts to be returned: {limit}")
 
-            query_params = ArtifactsRequestBuilder.ArtifactsRequestBuilderPostQueryParameters(
-                limit=limit
-            )
-
-            request_configuration = (
-                ArtifactsRequestBuilder.ArtifactsRequestBuilderPostRequestConfiguration(
-                    query_parameters=query_params
+                query_params = ArtifactsRequestBuilder.ArtifactsRequestBuilderPostQueryParameters(
+                    limit=limit
                 )
-            )
-            self.known_schema_registry_subjects: ArtifactSearchResults = await self.registry_client.search.artifacts.get(request_configuration=request_configuration)
+
+                request_configuration = (
+                    ArtifactsRequestBuilder.ArtifactsRequestBuilderPostRequestConfiguration(
+                        query_parameters=query_params
+                    )
+                )
+                artifact_search_results = await self.registry_client.search.artifacts.get(
+                    request_configuration=request_configuration)
+
+            self.known_schema_registry_subjects = artifact_search_results
+
             logger.info(f"Known schema registry subjects: {self.known_schema_registry_subjects.count}")
             for artifact in self.known_schema_registry_subjects.artifacts:
                 logger.info(f"known artifact id: {artifact.id}")
