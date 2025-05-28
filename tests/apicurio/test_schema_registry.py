@@ -4,7 +4,7 @@ import time
 import pytest
 import requests
 
-from datahub.ingestion.source.kafka import KafkaSourceConfig, KafkaSourceReport
+from datahub.ingestion.source.kafka.kafka import KafkaSourceConfig, KafkaSourceReport
 
 from kiota_abstractions.authentication.anonymous_authentication_provider import (
     AnonymousAuthenticationProvider,
@@ -119,15 +119,15 @@ async def test_apicurio_schema_registry():
 
     apicurio_schema_registry = ApicurioSchemaRegistry(kafka_source_config, kafka_source_report)
     apicurio_schema_registry = apicurio_schema_registry.create(kafka_source_config, kafka_source_report)
-    schema_metadata = apicurio_schema_registry.get_schema_metadata("test", "")
+    schema_metadata = apicurio_schema_registry.get_schema_metadata("test", "", False)
     assert schema_metadata is not None
 
-    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "")
+    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "", False)
     assert schema_metadata is None
 
     kafka_source_config.connection.schema_registry_config = {}
 
     apicurio_schema_registry = ApicurioSchemaRegistry(kafka_source_config, kafka_source_report)
     apicurio_schema_registry = apicurio_schema_registry.create(kafka_source_config, kafka_source_report)
-    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "")
+    schema_metadata = apicurio_schema_registry.get_schema_metadata("test-1-value", "", False)
     assert schema_metadata is not None
