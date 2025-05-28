@@ -19,8 +19,8 @@ from apicurioregistrysdk.client.registry_client import RegistryClient
 from apicurioregistrysdk.client.models.artifact_search_results import ArtifactSearchResults
 
 from datahub.ingestion.extractor import schema_util
-from datahub.ingestion.source.kafka import KafkaSourceConfig, KafkaSourceReport
-from datahub.ingestion.source.kafka_schema_registry_base import KafkaSchemaRegistryBase
+from datahub.ingestion.source.kafka.kafka import KafkaSourceConfig, KafkaSourceReport
+from datahub.ingestion.source.kafka.kafka_schema_registry_base import KafkaSchemaRegistryBase
 from datahub.metadata.com.linkedin.pegasus2avro.schema import SchemaMetadata, SchemaField, KafkaSchema
 
 logger = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
         return str(return_artifact, "utf-8")
 
     def get_schema_metadata(
-        self, topic: str, platform_urn: str
+        self, topic: str, platform_urn: str, is_subject: bool
     ) -> Optional[SchemaMetadata]:
         logger.info(f"Inside get_schema_metadata {topic} {platform_urn}")
         # Process the value schema
@@ -239,4 +239,10 @@ class ApicurioSchemaRegistry(KafkaSchemaRegistryBase):
             )
         return None
 
+    def _get_subject_for_topic(
+        self, dataset_subtype: str, is_key_schema: bool
+    ) -> Optional[str]:
+        pass
 
+    def get_subjects(self) -> List[str]:
+        pass
