@@ -6,7 +6,7 @@ apicurioregistrysdk==2.5.10
 async-timeout==4.0.3
 attrs==23.2.0
 avro==1.11.3
-avro-gen3==0.7.12
+avro-gen3==0.7.16
 cached-property==1.5.2
 certifi==2024.2.2
 charset-normalizer==3.3.2
