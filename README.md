@@ -21,4 +21,7 @@ source:
 </pre>
 
 ## Installation
-Package can be installed using `pip install apicurio-datahub-kafka`
+Package can be installed using 
+```bash
+pip install 'apicurioregistrysdk==2.5.10' && pip install apicurio-datahub-kafka 
+```
